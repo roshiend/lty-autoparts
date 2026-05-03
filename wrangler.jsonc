@@ -1,8 +1,8 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "lty-ltd-site",
+  "name": "lty-autoparts",
   "main": ".open-next/worker.js",
-  "compatibility_date": "2025-05-01",
+  "compatibility_date": "2025-12-01",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "assets": {
     "directory": ".open-next/assets",
@@ -11,7 +11,7 @@
   "services": [
     {
       "binding": "WORKER_SELF_REFERENCE",
-      "service": "lty-ltd-site"
+      "service": "lty-autoparts"
     }
   ]
 }

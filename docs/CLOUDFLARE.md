@@ -8,7 +8,7 @@ Repo wiring: **`wrangler.jsonc`**, **`open-next.config.ts`**, **`pnpm run pages:
 
 1. **Install** — From the project root: `pnpm install`.
 2. **Log in to Wrangler** (once): `pnpm exec wrangler login`.
-3. **Secrets / vars for production** — In [Workers & Pages](https://dash.cloudflare.com/) → your Worker (`lty-ltd-site`, or rename `"name"` in `wrangler.jsonc` if the name is taken) → **Settings** → **Variables and Secrets**, add:
+3. **Secrets / vars for production** — In [Workers & Pages](https://dash.cloudflare.com/) → your Worker (must match **`name`** in `wrangler.jsonc`, e.g. **`lty-autoparts`** when using Git-connected Workers Builds) → **Settings** → **Variables and Secrets**, add:
    - `NEXT_PUBLIC_SITE_URL` — `https://ltyway.co.uk` (or your canonical URL, no trailing slash)
    - `RESEND_API_KEY` — **Secret**
    - `CONTACT_EMAIL_TO` — `info@ltyway.co.uk`
