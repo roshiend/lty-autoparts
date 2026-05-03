@@ -3,6 +3,7 @@ import { Inter, Geist_Mono } from 'next/font/google'
 import { ConsentAwareAnalytics } from '@/components/consent-analytics'
 import { CookieConsentBanner } from '@/components/cookie-consent'
 import { SITE_COPY } from '@/lib/site-copy'
+import { getSiteUrl } from '@/lib/site-url'
 import './globals.css'
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
@@ -17,9 +18,28 @@ export const viewport: Viewport = {
   ],
 }
 
+const siteUrl = getSiteUrl()
+
 export const metadata: Metadata = {
-  title: 'LTY.LTD | Used Vehicle Spare Parts Exporter',
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: 'LTY.LTD | Used Vehicle Spare Parts Exporter',
+    template: '%s | LTY.LTD',
+  },
   description: SITE_COPY.metaDescription,
+  openGraph: {
+    type: 'website',
+    locale: 'en_GB',
+    url: siteUrl,
+    siteName: 'LTY.LTD',
+    title: 'LTY.LTD | Used Vehicle Spare Parts Exporter',
+    description: SITE_COPY.metaDescription,
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'LTY.LTD | Used Vehicle Spare Parts Exporter',
+    description: SITE_COPY.metaDescription,
+  },
   icons: {
     icon: [
       {

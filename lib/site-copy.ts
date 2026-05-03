@@ -36,5 +36,5 @@ export const SITE_COPY = {
     "Tell us what you need — we’ll reply with pricing and lead time, usually within 24–48 hours on business days.",
 
   searchResultsNote:
-    "Sample results for illustration — always confirm compatibility, price, and stock via quote or WhatsApp before ordering.",
+    "We don’t list live warehouse stock here — request a quote or WhatsApp us and we’ll confirm availability and pricing for your vehicle.",
 } as const

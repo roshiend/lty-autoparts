@@ -1,0 +1,7 @@
+# Copy to .dev.vars for local `pnpm preview:cf` (gitignored).
+# Values mirror Cloudflare Pages → Settings → Environment variables.
+
+NEXT_PUBLIC_SITE_URL=http://127.0.0.1:8788
+RESEND_API_KEY=
+CONTACT_EMAIL_TO=
+CONTACT_EMAIL_FROM=

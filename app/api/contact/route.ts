@@ -3,9 +3,6 @@ import { contactPayloadSchema } from "@/lib/api-schemas"
 import { sendTransactionalEmail } from "@/lib/email"
 import { escapeHtml } from "@/lib/escape-html"
 
-/** Edge-friendly so the same routes work on Cloudflare Workers / Pages. */
-export const runtime = "edge"
-
 const MAX_BODY_BYTES = 48_000
 
 export async function POST(req: Request) {

@@ -3,8 +3,7 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { ArrowLeft, Package, Filter, Mail, Info } from "lucide-react"
+import { ArrowLeft, Package, Filter, Mail } from "lucide-react"
 import { WhatsAppIcon } from "@/components/whatsapp-icon"
 import { useEffect, useMemo, useState, Suspense } from "react"
 import {
@@ -22,24 +21,20 @@ import {
 import { EU_UK_BRANDS, MODELS_BY_BRAND, PART_CATEGORIES } from "@/lib/eu-uk-vehicles"
 import { SITE_COPY } from "@/lib/site-copy"
 
-/** Demo inventory only — replace with your ERP/stock API for production. */
-const partsDatabase = [
-  { id: 1, name: "Brake Pad Set - Front", partNumber: "A0044206220", brand: "Mercedes-Benz", model: "C-Class", category: "Brake System", price: 89.99, inStock: true, oem: true },
-  { id: 2, name: "Air Filter Element", partNumber: "13717639677", brand: "BMW", model: "3 Series", category: "Engine Parts", price: 45.00, inStock: true, oem: true },
-  { id: 3, name: "Cabin Air Filter", partNumber: "1K1819653B", brand: "VW", model: "Golf", category: "Engine Parts", price: 18.50, inStock: true, oem: false },
-  { id: 4, name: "Spark Plug Set (4pcs)", partNumber: "0242236566", brand: "Audi", model: "A4", category: "Engine Parts", price: 65.00, inStock: true, oem: true },
-  { id: 5, name: "Front Shock Absorber", partNumber: "4G0413031AB", brand: "Audi", model: "A6", category: "Suspension", price: 245.00, inStock: false, oem: true },
-  { id: 6, name: "Alternator 14V 150A", partNumber: "0124655007", brand: "BMW", model: "5 Series", category: "Electrical", price: 320.00, inStock: true, oem: true },
-  { id: 7, name: "Timing Belt Kit", partNumber: "06K198001T", brand: "VW", model: "Golf", category: "Engine Parts", price: 189.00, inStock: true, oem: false },
-  { id: 8, name: "Rear Brake Disc Set", partNumber: "4M0615601", brand: "Audi", model: "Q7", category: "Brake System", price: 450.00, inStock: true, oem: true },
-  { id: 9, name: "Headlight Assembly - Left", partNumber: "8K0941003", brand: "Audi", model: "A4", category: "Electrical", price: 285.00, inStock: true, oem: true },
-  { id: 10, name: "Radiator Assembly", partNumber: "17117562586", brand: "BMW", model: "5 Series", category: "Cooling System", price: 395.00, inStock: false, oem: true },
-  { id: 11, name: "Clutch Kit Complete", partNumber: "A0232500001", brand: "Mercedes-Benz", model: "E-Class", category: "Transmission", price: 520.00, inStock: true, oem: true },
-  { id: 12, name: "Exhaust Manifold", partNumber: "06J253033K", brand: "VW", model: "Golf", category: "Exhaust", price: 340.00, inStock: true, oem: false },
-  { id: 13, name: "Power Steering Pump", partNumber: "32416783500", brand: "BMW", model: "X5", category: "Steering", price: 275.00, inStock: true, oem: true },
-  { id: 14, name: "Door Handle - Exterior", partNumber: "1K0837205", brand: "VW", model: "Golf", category: "Body Parts", price: 45.00, inStock: true, oem: true },
-  { id: 15, name: "Dashboard Cover", partNumber: "8K1857035", brand: "Audi", model: "A4", category: "Interior", price: 180.00, inStock: true, oem: true },
-]
+type PartRow = {
+  id: number
+  name: string
+  partNumber: string
+  brand: string
+  model: string
+  category: string
+  price: number
+  inStock: boolean
+  oem: boolean
+}
+
+/** Populate from your stock system when ready; empty means no online listings. */
+const partsDatabase: PartRow[] = []
 
 const WHATSAPP_NUMBER = "447353259996"
 
@@ -192,13 +187,6 @@ function SearchResultsContent() {
           <p className="text-muted-foreground mt-3 text-sm max-w-2xl">
             {SITE_COPY.searchResultsNote}
           </p>
-          <Alert className="mt-6 border-accent/30 bg-accent/5">
-            <Info className="h-4 w-4 text-accent" aria-hidden />
-            <AlertDescription>
-              <strong className="text-foreground">Demo stock.</strong> Results below are sample lines for UI testing —
-              not live warehouse quantities. Always confirm price and availability via quote or WhatsApp.
-            </AlertDescription>
-          </Alert>
         </div>
 
         <div className="flex flex-col lg:flex-row gap-8">
@@ -463,10 +451,9 @@ function SearchResultsContent() {
             ) : (
               <div className="text-center py-16 bg-card rounded-xl border border-border">
                 <Package className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-foreground mb-2">No Parts Found</h3>
+                <h3 className="text-xl font-semibold text-foreground mb-2">No matching listings</h3>
                 <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                  We couldn&apos;t find any parts matching your search criteria. 
-                  Try adjusting your filters or contact us for assistance.
+                  Online stock isn&apos;t listed here — tell us your vehicle and part number via quote or WhatsApp and we&apos;ll check availability.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
                   <Link href="/#parts-finder">

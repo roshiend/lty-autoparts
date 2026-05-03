@@ -1,5 +1,9 @@
+import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare"
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  poweredByHeader: false,
+  compress: true,
   images: {
     unoptimized: true,
     remotePatterns: [
@@ -18,3 +22,5 @@ const nextConfig = {
 }
 
 export default nextConfig
+
+initOpenNextCloudflareForDev()

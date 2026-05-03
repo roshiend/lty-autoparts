@@ -1,62 +1,98 @@
-# Cloudflare: hosting, SSL, and email
+# Cloudflare: SSL, hosting, email forwarding, production checklist
 
-This project can run on **Cloudflare Pages** (or Workers). API routes (`/api/contact`, `/api/quote`) use the **Edge** runtime so they run on Cloudflare’s network.
+This app is configured for **HTTPS**, **security headers** (`middleware.ts`), **API routes** for contact/quote (via **OpenNext for Cloudflare Workers** + `nodejs_compat`), and **Resend** for outbound form mail. Inbound mail uses **Cloudflare Email Routing** (forwarding); that does not replace Resend for website forms.
 
-## 1. SSL / HTTPS
+Repo wiring: **`wrangler.jsonc`**, **`open-next.config.ts`**, **`pnpm run pages:build`** (OpenNext), **`pnpm run deploy:cf`** (build + Wrangler deploy).
 
-With your domain on Cloudflare (nameservers pointing to Cloudflare):
+## Launch on Cloudflare (quick path)
 
-1. **SSL/TLS** → set mode to **Full** or **Full (strict)** once your origin is serving HTTPS.
-2. **Universal SSL** issues certificates for your hostname automatically (no manual cert purchase for the edge).
-3. For **Cloudflare Pages**, the Pages URL and any **custom domain** you attach also get managed certificates automatically.
+1. **Install** — From the project root: `pnpm install`.
+2. **Log in to Wrangler** (once): `pnpm exec wrangler login`.
+3. **Secrets / vars for production** — In [Workers & Pages](https://dash.cloudflare.com/) → your Worker (`lty-ltd-site`, or rename `"name"` in `wrangler.jsonc` if the name is taken) → **Settings** → **Variables and Secrets**, add:
+   - `NEXT_PUBLIC_SITE_URL` — `https://ltyway.co.uk` (or your canonical URL, no trailing slash)
+   - `RESEND_API_KEY` — **Secret**
+   - `CONTACT_EMAIL_TO` — `info@ltyway.co.uk`
+   - `CONTACT_EMAIL_FROM` — e.g. `LTY.LTD <quotes@ltyway.co.uk>` (verified in Resend)
+4. **Deploy from your PC** — `pnpm run deploy:cf` (runs `opennextjs-cloudflare build` then deploy).
 
-You do **not** need to install a separate certificate in the Next.js app for the public site when using Cloudflare’s proxy.
+**Or connect GitHub:** Workers & Pages → **Create** → **Workers** → **Connect Git** → pick `roshiend/lty-autoparts` (or your repo). Set:
 
-## 2. Deploy the site (Cloudflare Pages)
+- **Build command:** `pnpm install && pnpm run pages:build`
+- **Deploy command / Wrangler:** Cloudflare often detects `wrangler.jsonc`; if it asks for install root, use repo root.
 
-1. Put the repo on GitHub/GitLab.
-2. **Workers & Pages** → **Create** → **Pages** → **Connect to Git**.
-3. Select the repo and set:
-   - **Build command:** `pnpm install` (or `npm ci`) then `pnpm build` / `npm run build`
-   - **Build output directory:** depends on the adapter you use:
-     - Default **Next.js** preset on Pages may output to `.vercel/output/static` when using the official Cloudflare Next integration, **or**
-     - Follow [Cloudflare’s current Next.js on Pages](https://developers.cloudflare.com/pages/framework-guides/nextjs/) docs for the exact **output directory** and any wrapper (e.g. OpenNext) they recommend for your Next.js version.
-4. **Environment variables** (Pages → Settings → Environment variables) — mirror `.env.example`:
-   - `NEXT_PUBLIC_SITE_URL` — `https://your-domain.com` (no trailing slash)
-   - `RESEND_API_KEY`
-   - `CONTACT_EMAIL_TO` — where Resend delivers form submissions (often your Gmail if you forward there; see below)
-   - `CONTACT_EMAIL_FROM` — after Resend domain verification (see §4)
+Then attach **Custom domains**: **Workers** → your deployment → **Triggers** / **Custom domains** → add `ltyway.co.uk` / `www` as needed (DNS must be on Cloudflare).
 
-## 3. Email forwarding to Gmail (Cloudflare Email Routing)
+**Local smoke test (optional):** Copy `.dev.vars.example` → `.dev.vars`, fill values, run `pnpm run preview:cf`.
 
-**Inbound** mail (customers emailing `info@yourdomain.com`) does **not** use Resend. Use **Cloudflare Email Routing** (free on many zones):
+## Production checklist
 
-1. **Email** → **Email Routing** → enable for your domain.
-2. **Routing rules** → **Create address** e.g. `info@yourdomain.com` → **Send to** your Gmail address.
-3. Cloudflare adds the required **MX** (and related) records automatically when you use Email Routing.
+1. **`NEXT_PUBLIC_SITE_URL`** — Set in Cloudflare Pages (and locally for preview) to your canonical URL, e.g. `https://www.yourdomain.com` (no trailing slash). Used for sitemap, robots, and Open Graph.
+2. **`RESEND_API_KEY`** — From [Resend](https://resend.com); add as an encrypted secret in Pages.
+3. **`CONTACT_EMAIL_TO`** — Where form submissions are delivered (your Gmail is fine).
+4. **`CONTACT_EMAIL_FROM`** — **Required in production:** a sender on a domain you verify in Resend (e.g. `LTY.LTD <quotes@yourdomain.com>`). Do not rely on `onboarding@resend.dev` in production; the API will reject sends until this is set.
+5. **DNS (Cloudflare)** — After verifying the domain in Resend, add the **TXT/CNAME** records Resend shows (SPF, DKIM; DMARC recommended).
+6. **SSL/TLS** — Mode **Full** or **Full (strict)** when the origin serves HTTPS.
+7. **Email Routing** (optional, for **inbound** `info@`): Email → Email Routing → create `info@yourdomain.com` → destination mailbox. This is separate from form delivery via Resend.
 
-Then **replies** you send from Gmail will come from your Gmail unless you configure “Send mail as” for your domain (Google Workspace or careful SMTP setup). For **website forms**, outbound uses **Resend** (below), not Email Routing.
+## 1. Inbound email forwarding (Cloudflare Email Routing)
 
-## 4. Outbound form email (Resend) + DNS on Cloudflare
+Customers emailing your domain address (e.g. `info@ltyway.co.uk`) does **not** use Resend — Cloudflare routes it to your destination mailbox.
 
-Contact/quote forms send via **Resend** (`lib/email.ts`). You must:
+Example for **ltyway.co.uk**: **Email Routing** is set so **`info@ltyway.co.uk`** → **`lty.housereboot@gmail.com`**. That covers **inbound** mail from customers.
 
-1. Create a [Resend](https://resend.com) API key → set `RESEND_API_KEY` in Cloudflare Pages.
-2. **Verify your domain** in Resend and add the **DNS records** Resend shows (usually **SPF**, **DKIM**, sometimes **DMARC**) in **Cloudflare → DNS** for `yourdomain.com`.
-3. Set `CONTACT_EMAIL_FROM` to something like `LTY.LTD <quotes@yourdomain.com>` on that verified domain.
-4. Set `CONTACT_EMAIL_TO` to the inbox where you want submissions — e.g. your **Gmail** address, or `info@yourdomain.com` if that forwards to Gmail via Email Routing (Resend will deliver to that mailbox).
+For **website forms**, configure **`CONTACT_EMAIL_TO=info@ltyway.co.uk`** in Pages/secrets so **Resend** delivers submissions to the same address; Email Routing then forwards those messages to Gmail alongside normal email.
 
-Resend + Email Routing are complementary: **Resend = website → you**, **Email Routing = people → your domain → Gmail**.
+1. **Email** → **Email Routing** → enable for the zone.
+2. **Create address** → e.g. `info@ltyway.co.uk` → **Send to** your Gmail (or other inbox).
+3. Cloudflare adds **MX** (and related) records automatically.
 
-## 5. DNS summary (typical)
+Replies from Gmail will show as Gmail unless you use **Send mail as** or Google Workspace. **Website forms** send outbound via **Resend** to `CONTACT_EMAIL_TO` (using `info@ltyway.co.uk` matches this routing setup).
 
-| Purpose              | Where configured |
-|----------------------|------------------|
-| Site + SSL           | Domain proxied through Cloudflare; Pages custom domain |
-| Forward `info@` → Gmail | Cloudflare Email Routing |
-| Form delivery        | Resend → `CONTACT_EMAIL_TO` |
-| Resend deliverability| TXT/CNAME from Resend dashboard in Cloudflare DNS |
+## 2. Deploying the Next.js app on Cloudflare
 
-## 6. `NEXT_PUBLIC_SITE_URL`
+Full-stack Next.js (App Router, API routes, SSR) on Cloudflare typically uses the **OpenNext Cloudflare** adapter and **Wrangler**. Official docs: [OpenNext — Cloudflare](https://opennext.js.org/cloudflare/get-started) and [Next.js on Workers](https://developers.cloudflare.com/workers/framework-guides/web-apps/nextjs/).
 
-Set this to your **canonical public URL** so `sitemap.xml` and `robots.txt` use the correct host in production.
+### Already wired in this repo
+
+- **`@opennextjs/cloudflare`** and **`wrangler`** are devDependencies; **`open-next.config.ts`** and **`wrangler.jsonc`** are committed.
+- **`export const runtime = "edge"`** was removed from `/api/*` (required by OpenNext Cloudflare).
+- **`pnpm run pages:build`** — production bundle for Workers.
+- **`pnpm run deploy:cf`** — build and deploy via Wrangler CLI.
+
+If `migrate` was never run on your machine, you don’t need it here—the same files are already present.
+
+### Environment variables on Workers
+
+Mirror `.env.example` in the dashboard:
+
+| Variable | Notes |
+|----------|--------|
+| `NEXT_PUBLIC_SITE_URL` | Canonical site URL |
+| `RESEND_API_KEY` | Secret |
+| `CONTACT_EMAIL_TO` | Recipient |
+| `CONTACT_EMAIL_FROM` | Verified sender (production) |
+
+`CF_PAGES_URL` is available automatically on Cloudflare Pages builds; still set `NEXT_PUBLIC_SITE_URL` for stable SEO.
+
+### Other hosts (Vercel, Node)
+
+Standard **`pnpm build`** / **`pnpm start`** works. Set the same env vars; no Wrangler required.
+
+## 3. Outbound forms (Resend) + DNS
+
+1. Create an API key → `RESEND_API_KEY`.
+2. Verify **your domain** in Resend; add DNS records in Cloudflare.
+3. Set `CONTACT_EMAIL_FROM` to an address on that domain.
+4. Set `CONTACT_EMAIL_TO` to the inbox that should receive submissions (can match Email Routing destination).
+
+## 4. Static asset caching
+
+`public/_headers` sets long-lived caching for `/_next/static/*` on Cloudflare Pages. Other hosts may ignore `_headers`; that is harmless.
+
+## 5. Analytics
+
+**Vercel Analytics** (`@vercel/analytics`) loads only after cookie consent. You can add **Cloudflare Web Analytics** or **Zaraz** in the Cloudflare dashboard without code changes if you prefer edge-native analytics.
+
+## 6. Rate limiting
+
+Consider **Cloudflare WAF / Rate limiting rules** for `/api/contact` and `/api/quote` to reduce abuse. Rules are configured in the dashboard, not in this repo.

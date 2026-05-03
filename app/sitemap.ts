@@ -1,14 +1,8 @@
 import type { MetadataRoute } from "next"
-
-function baseUrl(): string {
-  return (
-    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000")
-  )
-}
+import { getSiteUrl } from "@/lib/site-url"
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const base = baseUrl()
+  const base = getSiteUrl()
   const paths = ["", "/search", "/quote", "/privacy", "/terms", "/cookies"]
 
   return paths.map((path) => ({

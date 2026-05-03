@@ -1,14 +1,8 @@
 import type { MetadataRoute } from "next"
-
-function baseUrl(): string {
-  return (
-    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000")
-  )
-}
+import { getSiteUrl } from "@/lib/site-url"
 
 export default function robots(): MetadataRoute.Robots {
-  const base = baseUrl()
+  const base = getSiteUrl()
   return {
     rules: {
       userAgent: "*",

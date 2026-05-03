@@ -1,7 +1,11 @@
 const DEFAULT_TO = "info@ltyway.co.uk"
 
 export function isEmailConfigured(): boolean {
-  return Boolean(process.env.RESEND_API_KEY?.trim())
+  const key = process.env.RESEND_API_KEY?.trim()
+  if (!key) return false
+  if (process.env.NODE_ENV !== "production") return true
+  const from = process.env.CONTACT_EMAIL_FROM?.trim()
+  return Boolean(from && !from.includes("onboarding@resend.dev"))
 }
 
 type SendResult =
@@ -20,9 +24,18 @@ export async function sendTransactionalEmail(params: {
   }
 
   const to = process.env.CONTACT_EMAIL_TO?.trim() || DEFAULT_TO
-  const from =
-    process.env.CONTACT_EMAIL_FROM?.trim() ||
-    "LTY.LTD <onboarding@resend.dev>"
+  const fromEnv = process.env.CONTACT_EMAIL_FROM?.trim()
+  const isProd = process.env.NODE_ENV === "production"
+
+  if (isProd && (!fromEnv || fromEnv.includes("onboarding@resend.dev"))) {
+    return {
+      ok: false,
+      error:
+        "Set CONTACT_EMAIL_FROM to a sender on your verified domain in Resend (see docs/CLOUDFLARE.md).",
+    }
+  }
+
+  const from = fromEnv || "LTY.LTD <onboarding@resend.dev>"
 
   const body: Record<string, unknown> = {
     from,
